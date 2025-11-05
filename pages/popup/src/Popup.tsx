@@ -1,63 +1,35 @@
-import '@src/Popup.css';
-import { t } from '@extension/i18n';
-import { PROJECT_URL_OBJECT, useStorage, withErrorBoundary, withSuspense } from '@extension/shared';
-import { exampleThemeStorage } from '@extension/storage';
-import { cn, ErrorDisplay, LoadingSpinner, ToggleButton } from '@extension/ui';
-
-const notificationOptions = {
-  type: 'basic',
-  iconUrl: chrome.runtime.getURL('icon-34.png'),
-  title: 'Injecting content script error',
-  message: 'You cannot inject script here!',
-} as const;
+import { withErrorBoundary, withSuspense } from '@extension/shared';
+import { showIconStorage } from '@extension/storage';
+import { ErrorDisplay } from '@extension/ui';
+import { Stack, Switch, Typography } from '@mui/material';
+import { useState, useEffect } from 'react';
 
 const Popup = () => {
-  const { isLight } = useStorage(exampleThemeStorage);
-  const logo = isLight ? 'popup/logo_vertical.svg' : 'popup/logo_vertical_dark.svg';
+  const [checked, setChecked] = useState(showIconStorage.getSnapshot() ?? false);
 
-  const goGithubSite = () => chrome.tabs.create(PROJECT_URL_OBJECT);
+  useEffect(() => {
+    showIconStorage.get().then(setChecked);
+    const unsubscribe = showIconStorage.subscribe(async () => {
+      showIconStorage.get().then(setChecked);
+    });
+    return () => {
+      unsubscribe(); // *3
+    };
+  }, []);
 
-  const injectContentScript = async () => {
-    const [tab] = await chrome.tabs.query({ currentWindow: true, active: true });
-
-    if (tab.url!.startsWith('about:') || tab.url!.startsWith('chrome:')) {
-      chrome.notifications.create('inject-error', notificationOptions);
-    }
-
-    await chrome.scripting
-      .executeScript({
-        target: { tabId: tab.id! },
-        files: ['/content-runtime/example.iife.js', '/content-runtime/all.iife.js'],
-      })
-      .catch(err => {
-        // Handling errors related to other paths
-        if (err.message.includes('Cannot access a chrome:// URL')) {
-          chrome.notifications.create('inject-error', notificationOptions);
-        }
-      });
+  const handleToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = event.currentTarget.checked;
+    setChecked(newValue);
+    chrome.storage.sync.set({ showIcon: newValue });
+    showIconStorage.set(newValue);
   };
 
   return (
-    <div className={cn('App', isLight ? 'bg-slate-50' : 'bg-gray-800')}>
-      <header className={cn('App-header', isLight ? 'text-gray-900' : 'text-gray-100')}>
-        <button onClick={goGithubSite}>
-          <img src={chrome.runtime.getURL(logo)} className="App-logo" alt="logo" />
-        </button>
-        <p>
-          Edit <code>pages/popup/src/Popup.tsx</code>
-        </p>
-        <button
-          className={cn(
-            'mt-4 rounded px-4 py-1 font-bold shadow hover:scale-105',
-            isLight ? 'bg-blue-200 text-black' : 'bg-gray-700 text-white',
-          )}
-          onClick={injectContentScript}>
-          {t('injectButton')}
-        </button>
-        <ToggleButton>{t('toggleTheme')}</ToggleButton>
-      </header>
-    </div>
+    <Stack direction="row" justifyContent="space-between" alignItems="center" p={1}>
+      <Typography variant="body1">拡張機能のアイコンを表示</Typography>
+      <Switch checked={checked} onChange={handleToggle} color="success" />
+    </Stack>
   );
 };
 
-export default withErrorBoundary(withSuspense(Popup, <LoadingSpinner />), ErrorDisplay);
+export default withErrorBoundary(withSuspense(Popup, <div> Loading ... </div>), ErrorDisplay);

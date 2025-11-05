@@ -1,4 +1,3 @@
-import '@src/index.css';
 import Popup from '@src/Popup';
 import { createRoot } from 'react-dom/client';
 
@@ -9,7 +8,11 @@ const init = () => {
   }
   const root = createRoot(appContainer);
 
-  root.render(<Popup />);
+  root.render(
+    <div style={{ width: '300px', height: 'auto' }}>
+      <Popup />
+    </div>,
+  );
 };
 
 init();
