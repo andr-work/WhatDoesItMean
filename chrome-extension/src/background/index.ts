@@ -1,10 +1,6 @@
-chrome.runtime.onInstalled.addListener(async () => {
-  chrome.contextMenus.create({
-    id: 'translation',
-    title: '選択したテキストを翻訳',
-    contexts: ['selection'],
-  });
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
+chrome.runtime.onInstalled.addListener(async () => {
   chrome.contextMenus.create({
     id: 'explain',
     title: '選択したテキストを簡単に説明',
@@ -12,20 +8,16 @@ chrome.runtime.onInstalled.addListener(async () => {
   });
 });
 
+const pendingMessages: Record<number, any[]> = {};
+
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (tab === undefined || !info.selectionText) {
+  if (!tab?.id || !info.selectionText) {
     return;
   }
 
   switch (info.menuItemId) {
-    case 'translation':
-      console.log('選択されたテキスト: ' + info.selectionText);
-      break;
-
     case 'explain': {
       // Chrome Prompt APIを使用
-      // 複数の場所から取得を試す（サンプルコードではグローバルに利用可能）
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const LanguageModel = (globalThis as any).LanguageModel;
 
       if (!LanguageModel) {
@@ -33,23 +25,54 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         break;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let session: any = null;
       try {
-        // サンプルコードに合わせてパラメータを設定
         const params = {
           initialPrompts: [
             {
               role: 'system',
-              content: 'You are a helpful assistant that explains text in simple, easy-to-understand language.',
+              content:
+                'You are a helpful assistant that explains text in simple and short, easy-to-understand language.',
             },
           ],
         };
 
         session = await LanguageModel.create(params);
-        const prompt = `explain the following text: ${info.selectionText}`;
-        const result = await session.prompt(prompt);
-        console.log(result);
+
+        const schema = {
+          originText: info.selectionText,
+          partOfSpeech: 'string',
+          description: 'string',
+          exaple1: 'string',
+          exaple2: 'string',
+          exaple3: 'string',
+        };
+
+        const prompt = `explain the following text in same language: ${info.selectionText}`;
+        const result = await session.prompt(prompt, {
+          responseConstraint: schema,
+        });
+
+        let parsedResult;
+
+        try {
+          parsedResult = JSON.parse(result);
+        } catch {
+          parsedResult = { description: result };
+        }
+
+        console.log(parsedResult);
+
+        // React が ready になるまで pendingMessages に保存
+        if (!pendingMessages[tab.id]) pendingMessages[tab.id] = [];
+        pendingMessages[tab.id].push(parsedResult);
+
+        if (tab.id !== undefined) {
+          chrome.tabs.sendMessage(tab.id, {
+            type: 'SHOW',
+            data: parsedResult,
+          });
+        }
       } catch (error) {
         console.error('Error explaining text:', error);
       } finally {
@@ -60,5 +83,17 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       }
       break;
     }
+  }
+});
+
+// Content Script から ready ping を受信
+chrome.runtime.onMessage.addListener((msg, sender) => {
+  if (msg.type === 'CONTENT_READY' && sender.tab?.id) {
+    const tabId = sender.tab.id;
+    const messages = pendingMessages[tabId] || [];
+    messages.forEach(m => {
+      chrome.tabs.sendMessage(tabId, { type: 'SHOW', data: m });
+    });
+    pendingMessages[tabId] = [];
   }
 });
