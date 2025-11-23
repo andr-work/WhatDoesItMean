@@ -38,8 +38,7 @@ const manifest = {
     type: 'module',
   },
   action: {
-    default_popup: 'popup/index.html',
-    default_icon: 'meanAI.png',
+    default_icon: 'meanAI.svg',
   },
   icons: {
     '128': 'meanAI.png',
@@ -69,7 +68,7 @@ const manifest = {
   devtools_page: 'devtools/index.html',
   web_accessible_resources: [
     {
-      resources: ['*.js', '*.css', '*.svg', 'icon-128.png', 'icon-34.png', 'meanAI.png'],
+      resources: ['*.js', '*.css', '*.svg', 'icon-128.png', 'icon-34.png', 'meanAI.svg', 'meanAI.svg'],
       matches: ['*://*/*'],
     },
   ],

@@ -1,0 +1,36 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+<stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+</linearGradient>
+<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+<feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+</filter>
+</defs>
+<!-- Background -->
+<circle cx="64" cy="64" r="60" fill="url(#grad1)" />
+
+<!-- Robot Face -->
+<g filter="url(#shadow)">
+  <!-- Head -->
+  <rect x="34" y="48" width="60" height="50" rx="12" fill="white" />
+  <!-- Eyes -->
+  <circle cx="54" cy="68" r="5" fill="#4F46E5" />
+  <circle cx="74" cy="68" r="5" fill="#4F46E5" />
+  <!-- Mouth -->
+  <path d="M54 82 Q64 88 74 82" stroke="#4F46E5" stroke-width="3" stroke-linecap="round" />
+  <!-- Antenna -->
+  <line x1="64" y1="48" x2="64" y2="40" stroke="white" stroke-width="4" />
+  <circle cx="64" cy="36" r="4" fill="white" />
+</g>
+
+<!-- Graduation Cap (Mortarboard) -->
+<g transform="translate(64, 32) rotate(-10)">
+  <path d="M0 -12 L28 0 L0 12 L-28 0 Z" fill="#FFD700" stroke="#B45309" stroke-width="2" />
+  <path d="M0 12 V22" stroke="#FFD700" stroke-width="2" />
+  <!-- Tassel -->
+  <path d="M28 0 L28 15" stroke="#F59E0B" stroke-width="2" />
+  <circle cx="28" cy="15" r="2" fill="#F59E0B" />
+</g>
+</svg>

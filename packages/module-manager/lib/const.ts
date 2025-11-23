@@ -78,7 +78,7 @@ export const MODULE_CONFIG = {
   popup: {
     action: {
       default_popup: 'popup/index.html',
-      default_icon: 'meanAI.png',
+      default_icon: 'meanAI.svg',
     },
   },
   devtools: {
