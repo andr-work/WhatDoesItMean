@@ -7,11 +7,8 @@ import { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { DialogBoxProps } from './DialogBox';
 
-console.log('[Content-UI] Script loaded');
-
 // Global listener setup
 chrome.runtime.onMessage.addListener(message => {
-  console.log('[Content-UI] Global listener received:', message);
   // Dispatch a custom event that the React app can listen to
   const event = new CustomEvent('chrome-extension-message', { detail: message });
   document.dispatchEvent(event);
@@ -41,7 +38,6 @@ const App = () => {
   };
 
   const handleIconClick = () => {
-    console.log('[Content-UI] Icon clicked, selectedText:', selectedText);
     if (selectedText) {
       // Show loading state immediately
       setData({
@@ -75,7 +71,6 @@ const App = () => {
     const handleCustomEvent = (event: Event) => {
       const customEvent = event as CustomEvent;
       const message = customEvent.detail;
-      console.log('[Content-UI] React received global message:', message);
 
       if (message.type === 'SHOW' && message.data?.description) {
         const newData: DialogBoxProps = {
@@ -122,8 +117,6 @@ const App = () => {
       const selectionStr = selection?.toString().trim() || '';
       const currentMode = modeRef.current;
 
-      console.log('[Content-UI] MouseUp:', { selectionStr, currentMode });
-
       if (selectionStr.length > 0) {
         // Text selected
         setSelectedText(selectionStr);
@@ -136,7 +129,6 @@ const App = () => {
           setMode('icon');
 
           // Trigger prefetch
-          console.log('[Content-UI] Triggering prefetch for:', selectionStr);
           chrome.runtime.sendMessage({ type: 'PREFETCH_SESSION' });
         }
       } else {
@@ -157,8 +149,6 @@ const App = () => {
     document.addEventListener('mouseup', handleMouseUp);
     return () => document.removeEventListener('mouseup', handleMouseUp);
   }, []); // Empty dependency array!
-
-  console.log('[Content-UI] Render: mode=', mode, 'showIcon=', showIcon, 'rect=', rect, 'iconPosition=', iconPosition);
 
   return (
     <>
@@ -194,9 +184,7 @@ const App = () => {
 };
 
 const init = () => {
-  console.log('[Content-UI] Initializing...');
   if (!document.body) {
-    console.log('[Content-UI] document.body not found, retrying...');
     setTimeout(init, 100);
     return;
   }
@@ -234,7 +222,6 @@ const init = () => {
       </ThemeProvider>
     </CacheProvider>,
   );
-  console.log('[Content-UI] App mounted');
 };
 
 if (document.readyState === 'loading') {

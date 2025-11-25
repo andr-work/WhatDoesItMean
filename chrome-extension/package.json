@@ -30,6 +30,9 @@
     "@extension/tsconfig": "workspace:*",
     "@extension/vite-config": "workspace:*",
     "@laynezh/vite-plugin-lib-assets": "^1.1.0",
+    "@types/chrome": "^0.0.323",
+    "@types/dom-chromium-ai": "^0.0.11",
+    "@types/node": "^22.18.1",
     "magic-string": "^0.30.17",
     "ts-loader": "^9.5.2"
   }
