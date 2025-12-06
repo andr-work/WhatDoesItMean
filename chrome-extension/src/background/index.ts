@@ -13,46 +13,15 @@ const pendingMessages: Record<number, any[]> = {};
 const systemPrompt =
   'You are a helpful dictionary assistant. You explain English words simply for learners. You MUST return only valid JSON. Do not include any other text.';
 
-// check model status
-const checkModelStatus = async () => {
-  let session: any = null;
+// Global session
+let globalSession: any = null;
+
+// Initialize global session
+const initializeGlobalSession = async () => {
+  if (globalSession) return globalSession;
+
   try {
-    // Check availability first
-    const availability = await LanguageModel?.availability();
-
-    switch (availability) {
-      case 'available':
-        break;
-      case 'unavailable':
-        throw new Error('AI model is unavailable on this device (insufficient power or disk space)');
-      case 'downloading':
-        throw new Error('AI model is currently downloading. Please wait and try again.');
-      case 'downloadable':
-        // Use initialPrompts format for downloadable models
-        session = await LanguageModel!.create({
-          initialPrompts: [
-            {
-              role: 'system',
-              content: 'hello!',
-            },
-          ],
-        });
-
-        // destroy session
-        if (session?.destroy) {
-          await session.destroy();
-        }
-    }
-  } catch (e) {
-    console.error('[Background] Model check failed:', e);
-    throw e;
-  }
-};
-
-// create session
-const createSession = async () => {
-  try {
-    const session = await LanguageModel!.create({
+    globalSession = await LanguageModel!.create({
       initialPrompts: [
         {
           role: 'system',
@@ -60,11 +29,20 @@ const createSession = async () => {
         },
       ],
     });
-
-    return session;
+    return globalSession;
   } catch (e) {
-    console.error('[Background] Failed to create session:', e);
+    console.error('[Background] Failed to initialize global session:', e);
     throw e;
+  }
+};
+
+// check model status (now just tries to init global session)
+const checkModelStatus = async () => {
+  try {
+    await initializeGlobalSession();
+  } catch (e) {
+    console.error('[Background] Model check/init failed:', e);
+    // Don't re-throw to allow retry later
   }
 };
 
@@ -81,8 +59,23 @@ const explainText = async (text: string, tabId: number) => {
   let session: any = null;
 
   try {
-    // Always create fresh session
-    session = await createSession();
+    // Ensure global session exists
+    if (!globalSession) {
+      await initializeGlobalSession();
+    }
+
+    // Clone session for this specific request
+    // Fallback: if clone not available, use globalSession directly (not recommended for concurrency) or create new.
+    if (globalSession.clone) {
+      session = await globalSession.clone();
+    } else {
+      // If clone is missing (older API), we might have to create fresh or use global (risk of context pollution).
+      // Let's create fresh as fallback to be safe if clone isn't there.
+      console.warn('[Background] .clone() not found, creating fresh session');
+      session = await LanguageModel!.create({
+        initialPrompts: [{ role: 'system', content: systemPrompt }],
+      });
+    }
 
     // 3. Prompt
     const prompt = `
@@ -155,8 +148,8 @@ Return a JSON object with this format:
       console.error('[Background] Failed to send error message to tab:', sendError);
     }
   } finally {
-    // Always destroy the session after use
-    if (session?.destroy) {
+    // Always destroy the CLONED session after use
+    if (session && session !== globalSession && session.destroy) {
       await session.destroy();
     }
   }
