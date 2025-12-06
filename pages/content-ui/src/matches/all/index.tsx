@@ -125,7 +125,19 @@ const App = () => {
 
         if (newRect.width > 0 && newRect.height > 0) {
           setRect(newRect);
-          setIconPosition({ x: newRect.right, y: newRect.bottom });
+
+          // Determine icon position
+          let x = event.clientX + 5;
+          let y = event.clientY + 5;
+
+          // If double click (selecting a word), place icon at the end of the selection
+          // event.detail counts clicks. 2 = double click.
+          if (event.detail >= 2) {
+            x = newRect.right;
+            y = newRect.bottom;
+          }
+
+          setIconPosition({ x, y });
           setMode('icon');
 
           // Trigger prefetch
@@ -145,9 +157,25 @@ const App = () => {
       }
     };
 
+    // Handle clearing selection more robustly
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || selection.toString().trim() === '') {
+        if (modeRef.current === 'icon') {
+          setMode('idle');
+          setIconPosition(null);
+        }
+      }
+    };
+
     // Add listener once. We don't depend on 'mode' anymore for attachment.
     document.addEventListener('mouseup', handleMouseUp);
-    return () => document.removeEventListener('mouseup', handleMouseUp);
+    document.addEventListener('selectionchange', handleSelectionChange);
+
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
   }, []); // Empty dependency array!
 
   return (

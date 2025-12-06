@@ -5,7 +5,12 @@ export interface IconProps {
 }
 
 export const Icon = (props: IconProps) => (
-  <IconButton onClick={props.handleClick} size="small">
+  <IconButton
+    onClick={props.handleClick}
+    size="small"
+    onMouseDown={e => {
+      e.preventDefault();
+    }}>
     <Avatar src={chrome.runtime.getURL('meanAI.svg')} sx={{ width: 24, height: 24, bgcolor: 'white' }}>
       AI
     </Avatar>
